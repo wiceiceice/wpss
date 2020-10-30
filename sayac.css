@@ -1,0 +1,65 @@
+@charset "utf-8";
+#countersTable {
+	font-family: Tahoma, Geneva, sans-serif;
+	font-size: 26px;
+	text-align: left;
+	color: #FFF;
+	border: thin none #666;
+}
+td {
+	text-align: center;
+	font-size: 14px;
+	color: #000;
+	font-family: Tahoma, Geneva, sans-serif;
+}
+#countersTable tr td u {
+	font-size: 16px;
+	font-family: Tahoma, Geneva, sans-serif;
+	text-align: center;
+	font-weight: bold;
+}
+body table tr td {
+	font-size: 14px;
+	font-family: Tahoma, Geneva, sans-serif;
+	text-align: left;
+	border-right-width: thin;
+	border-left-width: thin;
+	border-right-style: none;
+	border-left-style: none;
+	border-right-color: #666;
+	border-left-color: #666;
+	border-top-width: thin;
+	border-bottom-width: thin;
+	border-top-style: none;
+	border-bottom-style: none;
+	padding-left: 15px;
+	color: #000;
+	padding-right: 0px;
+}
+#countersTable tr #countersTable table tr td font b {
+	text-align: left;
+	font-family: Tahoma, Geneva, sans-serif;
+}
+#countersTable tr td table tr td font b {
+	text-align: left;
+	font-family: Tahoma, Geneva, sans-serif;
+}
+#countersTable2 {
+	text-align: center;
+}
+#countersTable #countersTable2 td {
+	text-align: center;
+}
+#countersTable #countersTable2 td {
+	font-weight: bold;
+}
+#countersTable #countersTable2 td {
+	font-size: 12px;
+	color: #FFF;
+}
+#countersTable tr3 td {
+	text-align: right;
+}
+#countersTable tr7 td {
+	text-align: right;
+}

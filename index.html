@@ -1,0 +1,368 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<title>Sayac Fatura</title>
+
+<link href="view/jquery-ui.min.css" rel="stylesheet">
+<link href="view/sayac.css" rel="stylesheet">
+
+<style type="text/css">
+#apDiv1 {
+  position: fixed;
+  width: 1470px;
+  height: 232px;
+  z-index: 100;
+  left: 10px;
+  top: 0px;
+  background-color: #FFF;
+}
+</style>
+
+<script src="view/jquery-1.11.2.min.js"></script>
+<script src="view/jquery.plugin.js"></script>
+<script src="view/jquery-ui.min.js"></script>
+
+<script type="text/javascript">
+
+var points_excel = new ActiveXObject("Excel.Application");
+
+var points_excel_file =  points_excel.Workbooks.Open("C:/MeterDefinitions.xls");
+var points_excel_sheet =  points_excel_file.Worksheets("Data");
+var rows_count = points_excel_sheet.UsedRange.Rows.Count;
+points_excel.Quit();
+
+
+var funcs = [];
+
+function createfunc(id) {
+  return function() {
+    var sum_param = '#sum_' + id;
+    var val1_param = '#startdate_' + id;
+    var val2_param = '#lastdate_' + id;
+    var startreading_param = '#startreading_' + id;
+    var lastreading_param = '#lastreading_' + id;
+    var periodreading_param = '#periodreading_' + id;
+        $.ajax({
+            url: "submit",
+            type: "POST",
+            data: {main_id: id, unitprice: $("#unitprice").val(), val1: $(val1_param).val(), val2: $(val2_param).val()},
+            success: function(response) {
+        $(sum_param).html(response['4']);
+        $(startreading_param).html(response['1']);
+        $(lastreading_param).html(response['2']);
+        $(periodreading_param).html(response['3']);
+                                        }
+        });
+      };
+};
+
+function updateBill() {
+for (var i = 1; i < rows_count; i++) {
+    funcs[i] = createfunc(i);
+}
+
+for (var j = 1; j < rows_count; j++) {
+    funcs[j]();                        // and now let's run each one to see
+}
+};
+
+$(function() {
+  $("#startdate_general").datepicker({
+    dateFormat: "yy-mm-dd",
+    onSelect: function(selected,evnt) {
+          updateStartDate4All(selected);
+    }
+
+  });
+});
+
+
+function updateStartDate4All(value){
+
+$('input[type=text][id^=startdate_]').val(value);
+
+};
+
+$(function() {
+  $("#lastdate_general").datepicker({
+    dateFormat: "yy-mm-dd",
+    onSelect: function(selected,evnt) {
+          updateLastDate4All(selected);
+    }
+
+  });
+});
+
+
+function updateLastDate4All(value){
+  $('input[type=text][id^=lastdate_]').val(value);
+
+};
+
+// When the testform is submitted...
+function changeUnitprice() {
+    // post the form values via AJAX...
+    $.post('/changeState', {item1: $("#unitprice").val()}, function(data) {
+            // and set the title with the result
+            $("#unitprice").html(data['unitprice']) ;
+           });
+    };
+
+function load() {
+
+    $.ajax({
+        type: "GET",
+        url: "unitprice_init",
+         success: function(data){
+           document.getElementById("unitprice").value = data.unitprice;
+        }
+    });
+
+    GetExcelData();
+
+    };
+
+function GetExcelData() {
+    var excel = new ActiveXObject("Excel.Application");
+    var excel_file = excel.Workbooks.Open("C:/MeterData.xls");
+    var excel_sheet = excel.Worksheets("Data");
+    for (i = 2; i < (rows_count+1); i++) {
+      var sayacid = excel_sheet.Cells(i,1).Value;
+      var shopdata = excel_sheet.Cells(i,2).Value;
+      var sayacdata = excel_sheet.Cells(i,3).Value;
+      var shopname_param = '#shopname_' + sayacid;
+      var sayacname_param = '#sayacname_' + sayacid;
+      $(shopname_param).html(shopdata);
+      $(sayacname_param).html(sayacdata);
+    }
+    excel.Quit();
+};
+
+
+
+function getReading(){
+  $.ajax({
+      type: "GET",
+      url: "sayac_oku",
+       success: function(data){
+         for (var key in data) {
+           if (data.hasOwnProperty(key)) {
+             var currentvalue_param = '#currentvalue_' + key;
+             $(currentvalue_param).html(data[key]);
+           }
+         }
+      }
+  });
+};
+
+
+function fnExcelReport()
+{
+    var tab_text="<table border='2px'><tr bgcolor='#87AFC6'>";
+    var textRange; var j=0;
+
+    //ilk satir basliklar
+    tab_text=tab_text+"<td>ГРЩ № </td><td>ШП № </td><td>АРЕНДАТОР</td><td>ЭЛЕКТРОСЧЕТЧИК №</td><td>ТЕКУЩИЕ ПОКАЗАНИЯ</p></td><td><p>НАЧАЛЬНАЯ ДАТА</p></td><td>НАЧАЛЬНЫЕ ПОКАЗАНИЯ</td><td>КОНЕЧНАЯ ДАТА</td><td>КОНЕЧНЫЕ ПОКАЗАНИЯ</td><td>ПОКАЗАНИЯ ЗА ПЕРИОД</td><td>СУММА</td></tr>"
+
+    table2xls = document.getElementById('countersTable'); // id of table
+
+    for(j = 0 ; j < table2xls.rows.length ; j++)
+    {
+
+      tab_text = tab_text + table2xls.rows[j].innerHTML+"</tr>";
+    }
+
+    tab_text=tab_text+"</table>";
+
+    tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");//remove if u want links in your table
+    tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+    //tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // removes input params
+
+    var ua = window.navigator.userAgent;
+    var msie = ua.indexOf("MSIE ");
+
+    if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+    {
+        txtArea1.document.open("txt/html","replace");
+        txtArea1.document.write(tab_text);
+        txtArea1.document.close();
+        txtArea1.focus();
+        sa=txtArea1.document.execCommand("SaveAs",true,"AviaParkElectricalMetersReport.xls");
+    }
+    else                 //other browser not tested on IE 11
+        sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+
+    return (sa);
+};
+
+
+
+getReading();
+setInterval(getReading,600000);
+
+
+</script>
+
+</head>
+<body onload="load()">
+<div id="apDiv1">
+  <table id="Table1" width="1436"  height="30" border="0" align="left" cellpadding="0" cellspacing="0" bgcolor="#0000FF">
+    <tr>
+      <td width="16" height="30"><td width="1420" style="text-align: center; color: #FFF; font-size: 36px;">AVIAPARK TENANT ENERGY METERING</h1></td>
+    </tr>
+  </table>
+  <p>&nbsp;</br></p>
+  <p>&nbsp;</br></p>
+  <table id="Table2" width="426" height="141" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="36">&nbsp;</td>
+      <td width="208">ЦЕНА
+        ЕДИНИЦЫ
+        <label for="unitprice">[Руб/кВтч] </label></td>
+      <td width="182">:
+        <input type="text" onChange="changeUnitprice()" id="unitprice" /></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>ОБЩАЯ
+        НАЧАЛЬНАЯ ДАТА </td>
+      <td>:
+        <input type="text" id="startdate_general" /></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>ОБЩАЯ
+        <label for="lastdate_general">КОНЕЧНАЯ ДАТА </label></td>
+      <td>:
+        <input type="text" id="lastdate_general" /></td>
+    </tr>
+    <tr>
+      <td height="57">&nbsp;</td>
+      <td><table id="Table3" width="156" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="52"><button onclick="updateBill()">счет </button></td>
+          <td width="38">&nbsp;</td>
+          <td width="66"><button id="btnExport" onclick="fnExcelReport();"> экспорт</button></td>
+        </tr>
+      </table></td>
+      <td>&nbsp;</td>
+    </tr>
+  </table>
+
+  <iframe id="txtArea1" style="display:none"></iframe>
+
+  <table id="Table4" width="1436"  height="30" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="108" bgcolor="#666666" style="color: #FFF">ГРЩ № </td>
+      <td width="73" bgcolor="#666666" style="color: #FFF">ШП № </td>
+      <td width="212" bgcolor="#666666" style="text-align: left; color: #FFF;">АРЕНДАТОР</td>
+      <td width="204" bgcolor="#666666" style="color: #FFF">ЭЛЕКТРОСЧЕТЧИК №</td>
+      <td bgcolor="#666666" width="94"><p style="color: #FFF">ТЕКУЩИЕ ПОКАЗАНИЯ</p></td>
+      <td width="154" bgcolor="#666666" style="color: #FFF"><p>НАЧАЛЬНАЯ ДАТА</p></td>
+      <td width="125" bgcolor="#666666" style="color: #FFF">НАЧАЛЬНЫЕ ПОКАЗАНИЯ</td>
+      <td width="161" bgcolor="#666666" style="color: #FFF">КОНЕЧНАЯ ДАТА</td>
+      <td width="96" bgcolor="#666666" style="color: #FFF">КОНЕЧНЫЕ ПОКАЗАНИЯ</td>
+      <td width="96" bgcolor="#666666" style="color: #FFF">ПОКАЗАНИЯ ЗА ПЕРИОД</td>
+      <td width="108" bgcolor="#666666" style="color: #FFF">СУММА</td>
+    </tr>
+  </table>
+</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<table id="countersTable" width="1436" border="0" cellspacing="0" cellpadding="0">
+
+  % for grs in mydict:
+  <tr>
+    <td width="88" height="25"><p>&nbsp;</p>
+      <p><u>${grs}</u></p></td>
+    <td width="74">&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td width="104">&nbsp;</td>
+    <td width="161">&nbsp;</td>
+    <td width="105">&nbsp;</td>
+    <td width="161">&nbsp;</td>
+    <td width="101">&nbsp;</td>
+    <td width="103">&nbsp;</td>
+    <td width="97">&nbsp;</td>
+    </tr>
+
+    % for busbar in mydict[grs]:
+
+    <%
+        line_number = 1
+        colored=1
+      %>
+    <tr>
+                            <td>&nbsp;</td>
+                            <td bgcolor="#0099FF" style="text-align: right; font-size: 16px; color: #FFF;">${busbar}</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                            <td bgcolor="#0099FF">&nbsp;</td>
+                      </tr>
+      % for programid in mydict[grs][busbar]:
+        % if (colored==1):
+          <tr>
+                     <td>&nbsp;</td>
+                     <td bgcolor="#d7d7d7" style="text-align: right">${line_number}</td>
+                     <td bgcolor="#d7d7d7" width="223" height="15" align=right font size=2 ><div id="shopname_${programid}"></div></td>
+                     <td bgcolor="#d7d7d7" width="219" height="15" align=right font size=2 ><div id="sayacname_${programid}"></div></td>
+                     <td bgcolor="#d7d7d7"><div id="currentvalue_${programid}"></div></td>
+                     <td bgcolor="#d7d7d7"><input type="text" id="startdate_${programid}"></td>
+                     <td bgcolor="#d7d7d7"><div id="startreading_${programid}"></div></td>
+                     <td bgcolor="#d7d7d7"><input type="text" id="lastdate_${programid}"></td>
+                     <td bgcolor="#d7d7d7"><div id="lastreading_${programid}"></td>
+                     <td bgcolor="#d7d7d7"><div id="periodreading_${programid}"></td>
+                     <td bgcolor="#d7d7d7"><div id="sum_${programid}"></td>
+                   </tr>\
+        % else:
+        <tr>
+                   <td>&nbsp;</td>
+                   <td style="text-align: right">${line_number}</td>
+                   <td width="223" height="15" align=right font size=2 ><div id="shopname_${programid}"></div></td>
+                   <td width="219" height="15" align=right font size=2 ><div id="sayacname_${programid}"></div></td>
+                   <td><div id="currentvalue_${programid}"></div></td>
+                   <td><input type="text" id="startdate_${programid}"></td>
+                   <td><div id="startreading_${programid}"></div></td>
+                   <td><input type="text" id="lastdate_${programid}"></td>
+                   <td><div id="lastreading_${programid}"></td>
+                   <td><div id="periodreading_${programid}"></td>
+                   <td><div id="sum_${programid}"></td>
+                 </tr>\
+        % endif
+                   <%
+                        line_number += 1
+                        colored +=1
+                        if (colored==2):
+                          colored=0
+                     %>
+
+      % endfor
+    % endfor
+  % endfor
+
+
+</table>
+
+ <p>&nbsp;</p>
+ <p>&nbsp;</p>
+ <p>&nbsp;</p>
+ <p>&nbsp;</p>
+ <p>&nbsp;</p>
+ <p>&nbsp;</p>
+
+ </body>
+ </html>
